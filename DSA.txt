@@ -1,0 +1,226 @@
+#################### Question 1 ##################
+
+You are given undirected and unweighted graph of uppercase nodes. Alice is at A and Bob is at B. Both need to reach at D.
+Both can go in same car from common edge.
+Compute the min distinct edges required for Bob and Alice to reach D.
+
+(F is connected to D)
+
+A -- F
+| \
+C -- E --D
+|
+B -- G -- H
+
+Ans: 4
+A-C-E-D
+B-C-E-D
+
+✔ Alice: shortest path = A-C-E-D (3 edges)
+✔ Bob: shortest path = B-C-E-D (3 edges)
+✔ Union = {A-C, C-E, E-D, B-C} = 4 distinct edges ✅
+
+
+
+############# Solution ###########
+
+vector<char> bfs(char src,char dest,unordered_map<char,vector<char>> &adj)
+	queue<char> q;
+	unordered_map<char,char> mp;
+	q.push(src);
+	mp[src]='.';
+	
+	while(!q.empty())
+		char tp=q.front();
+		q.pop();	
+		if(tp==dest)
+			break
+		for(char x:mp[tp])
+			if(!mp.find(x)!=mp.end())
+				q.push(x)
+				mp[x]=tp
+	char curr=dest
+	vector<char> ans
+	while(curr!='.')
+		ans.push_back(curr)
+		curr=mp[dest]
+	reverse(ans)
+	return ans
+
+void storeEdges(vector<char> pp,unordered_set<pair<char,char>>& ss)
+	for(int i=0;i<pp.size()-1;i++){
+		char first=min(pp[i],pp[i+1])
+		char second=max(pp[i],pp[i+1])
+		ss.insert({first,second})
+	}
+main()
+	vector<char> pathA=bfs(firstNode,dest,adj)	
+	vector<char> pathB=bfs(secondNode,dest,adj)
+	
+	unordered_set<pair<char,char>> ss
+	
+	storeEdges(pathA,ss)
+	storeEdges(pathB,ss)
+	
+	return ss.size()
+	
+		
+################## Question 2 #####################
+
+Ques - Given a range of IP Addresses and Country associated with it. Input will be an IP address and return the Country to which it belongs to based on the ranges ?
+
+Eg.
+Range of IP address - Country
+{ 1.1.0.1 - 1.1.0.10 } - IND
+{ 1.1.0.20 - 1.1.0.30 } - FR etc.
+
+Input(IP address) - 1.1.0.5
+
+Output(Country) - IND
+
+Explaination - As the input IP falls in the Range of 1.1.0.1 to 1.1.0.10 which is mapped to IND
+
+
+###############################
+
+iterate through each i/p and convert IP ranges into integers
+	
+	stringstream(ip)
+	string token
+	for(int i=0;i<4;i++)
+		getline(ip,token,'.')
+		int num=stoi(token)
+		res=(res<<8) | num
+	return res
+
+Note about stringstream
+	stringstream ss("123 456");
+	int a, b;
+	ss >> a >> b;
+	cout << a << " " << b;   // prints 123 456
+	
+	
+	getline() normally reads from a stream until a newline (\n).
+	But here we pass a delimiter ('.').
+	That means it will read until it finds a dot (.)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+		
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

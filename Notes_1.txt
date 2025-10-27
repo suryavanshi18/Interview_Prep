@@ -1,0 +1,83 @@
+API Gateway
+
+	Validate request from client 
+		Proper Headers, Validates caller IP address
+	Run Middleware
+		Authentication and authorization (session information),Rate limiting
+	Route to correct service by path matching
+	Appropriate protocol conversation to services and sending response
+	API gateway should be 
+	Transform the response
+	
+
+
+Broadcasting in pytorch
+
+	a = torch.tensor([[1], [2], [3]]) # 3x1 
+	b = torch.tensor([10, 20, 30]) # 1x3 
+	result = a + b # Broadcasting to 3x3 
+	Result: # [[11, 21, 31], # [12, 22, 32], # [13, 23, 33]]	
+	
+	a = torch.tensor([[1, 2, 3],
+                  [4, 5, 6]])
+	b = 10   # scalar
+
+	print(a + b)
+	[[11, 12, 13],
+	 [14, 15, 16]]
+	
+	
+	a = torch.tensor([[1], [2]])     # shape (2,1)
+	b = torch.tensor([[10, 20, 30]]) # shape (1,3)
+
+	print(a + b)
+	[[11, 21, 31],
+ 	[12, 22, 32]]
+
+EDA->Event Driven Architecture
+	Event Producers
+	Event Brokers ->queues or stream events
+	Consumers->Respond to events
+	Connected through common messaging infrastructure
+	Events are stored in event stream and sent to different services
+	EDA is Async communication
+	Service Mesh are sync communication
+	Challenges
+		Event Ordering
+		Event Duplication
+		Data Consistency
+127.0.0.0/8 ->from 1 t0 255 mapped to your sys, but 127.0.0.1 is the standard
+To change it->C:\Windows\System32\drivers\etc\hosts
+
+
+	
+	
+	 
+	
+	
+	
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	
