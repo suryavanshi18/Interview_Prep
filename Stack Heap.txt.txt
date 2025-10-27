@@ -1,0 +1,55 @@
+Global variable is stored inside the data section and persists for the entire lifespan of program
+Object creation happens on heap and its references are stored in heap
+Garbage collector runs on heap
+new keyword creates object on heap
+
+Process is an instance of program in execution with its own memory and resources
+Process cant access physical RAM hence the Operating system creates Virtual memory
+which maps to Physical memory
+
+Virtual memory is divided into
+
+OS kernel
+Stack
+Heap
+BSS
+Data
+Text/Code
+
+Data/ BSS stores global variables
+Data-> Stores initialized global variables
+BSS-> Stores uninitialized glboal varibales
+
+Memory leaks->When program allocates memory on heap
+              but never uses it. Overtime is such memory block increases program might crash
+
+
+Stack memory region
+1-8 MB
+
+Heap uses memory allocater
+Stack uses stack pointer
+
+OS kernel contains pages which are mapped to actual address in physical memory
+
+
+We shouldn't access physical memory directly, since it would cause security issues
+Fragmentation -> fragments of memory accross the memory and a program requiring that memory
+                 can't be accessed. 
+Insufficient Memory
+
+
+Each process has its own virtual memory
+Using Virtual memory OS can extend memoy by using the disk space
+Swap file
+
+Segementation fault-> Program tried to access the memory it wasn't allowed to.
+Example -> accessing index out of bounds in array
+	   Derefrencing a NULL pointer
+	   
+	   int *p1;
+	   p1=20;
+	   print(*p1)
+	   
+
+
