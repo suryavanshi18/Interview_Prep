@@ -1,0 +1,110 @@
+Load Balancer->We have our application and we want to distribute the load among copies of our application
+ 
+API Gateway->Central point from which you are distributing the request to different micoroservices
+ 	     Performes authorization
+ 
+Reverse Proxy->Hiding the identity of backend system
+ 	       Caching static content
+
+
+
+Db strategies
+
+	Vertical Scaling->Increase CPU power
+			  Adding more RAM
+			  Adding more disk
+			  Upgrading network
+
+	Horizontal Scaling->DB sharding->Distributing various parts of the db across various servers
+						Range based
+						Directory based sharding
+						Geographical based sharding	  
+		            Replication->Keeping copies of db on multiple servers
+						Master db for read/write and other slaves for read only
+						Both master and slave for read/write
+	
+	DB caching->Cache frequent queries to boost performance
+	
+	Index->Index frequently accessed columns
+	
+	Query optimization-> minimizing joins
+
+	CAP->Consistency Availability and Partition. You can only optimize 2/3
+
+
+DB indexing
+	Index is a separate data structure that maintains sorted searchable copy of certain column
+	along with pointers to the actual rows
+	
+	We use B trees
+
+		Primary index-> Data is physically organized by this index.
+
+		create table users(
+			...
+			...
+		);
+
+		
+		Secondary index->Separate structure that point back to the primary key.
+				create index index_name on table_name(col_name);
+		
+More indexes can make operation slow in case of write and update operations as you need to modify indexes as well
+Check for col where you do constant lookups. Use those cols to create index.
+If we use foreign key col index it
+
+When not to index?
+	Small table
+	Rarely queries
+	Low selectivity
+	Heavily write/updated
+
+
+Sharding
+	Router and config server
+	Router->read/write and decides which server to send data
+	Config ->stores sharding algorithm and knows how data is split
+
+	So router checks the config server to check where to send the data
+
+	We need to keep in mind the following
+		Even distribution
+		Add Shards
+		Delete/Failed shards
+	
+
+	Sharding types
+		Simple hashing-> S[i]=row_id%n
+			Works find until we need to add new row or a shard goes
+		
+		Consistent hashing->
+			Shards are distributed in circle and
+			
+			User_id%number_shards=X[i]
+
+		      s1	s2	s3		sn
+	      ----------------------
+        0	x0	x1	x2	x3	P
+
+
+			We also replicate the data in case a shard goes down
+			Hence request coming to failed shard would go to new shard
+		
+			
+
+		
+			
+	
+
+
+
+
+
+
+
+
+
+
+
+
+ 
