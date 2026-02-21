@@ -38,3 +38,6 @@ Covered:
 “What’s the hardest bug you debugged in production?”
 
 So if you’re prepping: nail clean, optimal code under time pressure & explain tradeoffs verbally. Google loves candidates who think aloud clearly and show “Googleyness” (ownership & humility).
+
+
+Reference->https://x.com/ConsciousRide/status/2025125707681316881
