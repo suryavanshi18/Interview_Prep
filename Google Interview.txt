@@ -1,0 +1,40 @@
+Google interview (end to end). Real questions I got from my friend who recently cracked Google. 
+
+1. Recruiter screen (15–20 min)  
+“Why Google?”  
+“Current comp, expectations, relocation willingness?”
+
+2. Phone screen 1 – Coding (45–60 min)  
+- “Design TinyURL.” (hashing + base62 + collision handling)  
+- “Find median from data stream.” (two heaps)  
+Follow ups: handle duplicates, negatives, space optimization
+
+3. Phone screen 2 – Coding (45–60 min)  
+- “Longest substring without repeating characters.” (sliding window)  
+- “Serialize and deserialize binary tree.” (preorder + null markers)  
+Follow ups: time/space, edge cases (empty tree, single node)
+
+4. Onsite – Coding Round 1 (45 min)  
+- “Word break II.” (DP + backtracking)  
+Follow ups: optimize space, return all valid sentences
+
+5. Onsite – Coding Round 2 (45 min)  
+- “Alien dictionary.” (topological sort + graph)  
+Follow ups: cycle detection, multiple valid orders
+
+6. Onsite – System design (45 min)  
+“Design YouTube.”  
+Covered:  
+- video upload/download (chunking, resumable, GCS)  
+- recommendation (collaborative filtering + content-based)  
+- search (inverted index, ranking, autocomplete)  
+- scale (1B+ DAU, hot videos, CDN, sharding)  
+- consistency vs availability for views/counts  
+- transcoding pipeline, thumbnails, notifications
+
+7. Onsite – Behavioral / Googliness (45 min)  
+“Tell me about a time you disagreed with a senior engineer.”  
+“How did you handle a tight deadline with quality tradeoffs?”  
+“What’s the hardest bug you debugged in production?”
+
+So if you’re prepping: nail clean, optimal code under time pressure & explain tradeoffs verbally. Google loves candidates who think aloud clearly and show “Googleyness” (ownership & humility).
