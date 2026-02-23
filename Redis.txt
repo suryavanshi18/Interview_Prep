@@ -1,0 +1,78 @@
+Redis is in memory db which stores data in RAM hence faster read/write
+
+It also has disk distribution that it stores the snapshot on hard disk
+Datatypes
+	string,hash,list,geospatial,bitmap,set
+	
+setex username 5 Abhi
+lpush list_name val
+lrange list_name 0 -1 #print all the elements of list
+
+
+
+
+Redis message queue using fastapi
+
+main.py
+
+##########################################
+
+from fastapi import FastAPI
+import uvicorn
+from redis import Redis
+from rq import Queue
+from pydantic import BaseModel
+from job import print_number 
+class JobPayload(BaseModel):
+    lowest:int
+    highest:int
+    
+
+app=FastAPI()
+redis_con=Redis(host='localhost',port=6379)
+task_queue=Queue("task_queue",connection=redis_con)
+@app.get("/")
+def index():
+    return {"success":True,"message":"pong"}
+
+@app.post("/job")
+def post_job(payload:JobPayload):
+    lowest=payload.lowest
+    highest=payload.highest
+    
+    job_instance=task_queue.enqueue(print_number,lowest,highest)
+    return {"success":True,
+            "job":job_instance.id}
+    
+
+##########################################
+
+job.py
+
+##########################################
+def print_number(lowest,highest):
+    x=lowest
+    print("== Job processing")
+    while(x<=highest):
+        print("{}\n".format(x))
+        x=x+1
+        
+    print("== End")
+        
+###########################################
+
+
+
+
+#########################################
+in one terminal 
+
+>uvicorn main:app --reload
+
+in another terminal
+
+>rq worker task_queue
+
+here task_queue is the queue name
+we are opening the redis queue
+########################################
