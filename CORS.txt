@@ -1,0 +1,152 @@
+CORS->Cross Origin Request Sharing 
+      From which website can we get data
+      A webpage can only make request to same origin ie
+      same domain, protocol and port
+      
+      Access control allow origin->  which websites to allow your apis
+      CORS request are http request
+      		Simple->If GET POST HEAD
+      			No custom headers like authorization tokens
+      			
+      		Custom-> PUT DELETE PATCH
+      		         Browser sends preflight request first asking for permission
+      		         before making real request
+      		         This includes custom headers like authorization api key
+      CSRF-> Cross Site Request Forgery
+             When a malacious site submits a request on behalf of your demand
+             
+             Generate random token from server side client will verify it
+             
+             Use samesite-> blocks cross site from sending cookies
+             Use Content Scripting Policy
+               
+      		         
+      		         
+GENERAL 
+
+	Request URL:
+	https://192.168.yy.XX:89/py/showAllEnrollEntity
+	Request Method:
+	GET
+	Status Code:
+	200 OK
+	Remote Address:
+	192.168.181.170:8999
+	Referrer Policy:
+	strict-origin-when-cross-origin
+
+
+Response Header
+	Access-Control-Allow-Origin:
+	*
+	Cache-Control:
+	no-store, no-cache
+	Content-Type:
+	application/json
+	Date:
+	Wed, 04 Mar 2026 09:36:34 GMT
+	Pragma:
+	no-cache
+	Referrer-Policy:
+	no-referrer
+	Strict-Transport-Security:
+	max-age=31536000; includeSubDomains
+	Transfer-Encoding:
+	chunked
+	Vary:
+	Origin
+	Vary:
+	Access-Control-Request-Method
+	Vary:
+	Access-Control-Request-Headers
+	X-Content-Type-Options:
+	nosniff
+
+Request Headers
+	Accept:
+	application/json, text/plain, */*
+	Accept-Encoding:
+	gzip, deflate, br, zstd
+	Accept-Language:
+	en-GB,en-US;q=0.9,en;q=0.8
+	Access-Control-Allow-Headers:
+	Content-Type
+	Access-Control-Allow-Methods:
+	POST, GET
+	Access-Control-Allow-Origin:
+	https://192.168.yy.XX:89/,https://192.168.yy.XX/,https://sd.s.n.us:1515/
+	Connection:
+	keep-alive
+	Content-Type:
+	application/json
+	Guest:
+	52
+	Host:
+	https://192.168.yy.XX:8999
+	Origin:
+	https://192.168.yy.XX
+	Referer:
+	https://192.168.yy.XX/
+	Sec-Ch-Ua:
+	"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"
+	Sec-Ch-Ua-Mobile:
+	?0
+	Sec-Ch-Ua-Platform:
+	"Linux"
+	Sec-Fetch-Dest:
+	empty
+	Sec-Fetch-Mode:
+	cors
+	Sec-Fetch-Site:
+	cross-site
+	Token:
+	bdgbdgbdgb
+	Tune:
+	Lxyr6fT4i0pKuFA/vAmYqihauQ=
+	User-Agent:
+	Mozilla/5.0 (X11; Linux x86_64)
+	X-Api-Key:
+	be77bc3459d881956b4
+	X-Xss-Protection:
+	1; mode=block
+
+	
+
+request headers are sent by the browser to the server 
+response header are sent by server
+
+Response Headers (server → browser)
+Access-Control-Allow-Origin: * — this is a CORS header. The wildcard means any domain is allowed to call this API. This is quite permissive and usually fine for public APIs, but risky for private ones since it means any website could make requests to this endpoint.
+Cache-Control: no-store, no-cache — tells the browser to never cache this response. no-store means don't save it at all, no-cache means always revalidate with the server before using a cached copy. Using both is a belt-and-suspenders approach to make absolutely sure the data is always fresh.
+Content-Type: application/json — the response body is JSON.
+Date — timestamp of when the server generated the response.
+Pragma: no-cache — an older HTTP/1.0 way of saying the same thing as Cache-Control: no-cache. Kept for backward compatibility with older clients.
+Referrer-Policy: no-referrer — the server is instructing the browser to not send any Referer header on subsequent requests originating from this response. More privacy-conscious than the default.
+Strict-Transport-Security (HSTS) — tells the browser to only use HTTPS for this domain for the next year (31536000 seconds), including all subdomains. If someone tries to visit via HTTP, the browser automatically upgrades to HTTPS without even making the insecure request.
+Transfer-Encoding: chunked — the server is streaming the response in chunks rather than sending it all at once. This means the server doesn't need to know the total size upfront.
+Vary: Origin, Access-Control-Request-Method, Access-Control-Request-Headers — tells caches that the response can differ depending on these request headers. So a cached response for one origin shouldn't be served to a different origin.
+X-Content-Type-Options: nosniff — prevents the browser from guessing the content type. The browser must trust the Content-Type header and not try to "sniff" the content. This prevents attacks where, say, a malicious file disguised as an image gets interpreted as JavaScript.
+
+Request Headers (browser → server)
+Accept: application/json, text/plain, */* — tells the server what content types the browser can handle, in order of preference. JSON first, plain text second, anything else as a fallback.
+Accept-Encoding: gzip, deflate, br, zstd — the compression formats your browser supports. The server can compress the response using any of these to save bandwidth. br is Brotli (usually best compression), zstd is Zstandard (newer, very fast).
+Accept-Language: en-GB,en-US;q=0.9,en;q=0.8 — your language preferences with quality weights. British English is preferred, then American English (90% weight), then generic English (80%).
+Access-Control-Allow-Headers, Access-Control-Allow-Methods, Access-Control-Allow-Origin — these are unusual in a request. These are normally response headers. It looks like your frontend code is manually adding them, which is unnecessary and incorrect. The server is supposed to set these, not the client. They'll be ignored by the server but it's a code smell worth cleaning up.
+Connection: keep-alive — asks the server to keep the TCP connection open so multiple requests can reuse it, avoiding the overhead of establishing a new connection each time.
+Content-Type: application/json — tells the server the format of your request body. A bit odd for a GET request since GETs typically don't have a body, but harmless.
+Guest: 52 — a custom header, likely application-specific. Could be a user ID or session identifier your app uses.
+Host — the target server. Note this shows a full URL with https:// which is technically incorrect — the Host header should be just the hostname and port like 192.168.yy.XX:8999. Your frontend might be setting this manually and incorrectly.
+Origin — where the request is coming from. The browser sets this automatically for cross-origin requests so the server can decide whether to allow it via CORS.
+Referer — the page the user was on when the request was made. Note the historical misspelling (should be "Referrer" but the HTTP spec locked in the typo decades ago).
+Sec-Ch-Ua headers — Client Hints that tell the server about the browser. Your browser is Chrome 120 on Linux, not a mobile device.
+Sec-Fetch-Dest: empty — this is an API/fetch call, not a navigation or image load.
+Sec-Fetch-Mode: cors — it's a cross-origin request.
+Sec-Fetch-Site: cross-site — confirms the request origin and target are different sites.
+Token — a custom auth header, likely a session or JWT token for authentication.
+Tune — another custom header, possibly a signature or hash for request verification.
+User-Agent — identifies your browser and OS to the server.
+X-Api-Key — an API key for authentication/authorization. Having both Token and X-Api-Key suggests a two-layer auth system.
+X-Xss-Protection: 1; mode=block — another header that's unusual on the request side (it's normally a response header). It tells the browser to block pages if XSS is detected. Like the CORS headers above, your frontend is likely adding this unnecessarily.
+
+
+
