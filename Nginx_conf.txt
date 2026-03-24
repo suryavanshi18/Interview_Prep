@@ -15,10 +15,10 @@ services:
       - "9000:9000"
       - "9090:9090"
     environment:
-      - MINIO_ROOT_USER=cdac
-      - MINIO_ROOT_PASSWORD=linux123
-      - MINIO_BROWSER_REDIRECT_URL=https://192.168.181.54:9090
-      #- MINIO_BROWSER_REDIRECT_URL=https://192.168.181.138:9090
+      - MINIO_ROOT_USER=c***d
+      - MINIO_ROOT_PASSWORD=l*****123
+      - MINIO_BROWSER_REDIRECT_URL=https://192.168.181.XX:9090
+      #- MINIO_BROWSER_REDIRECT_URL=https://192.168.181.XXX:9090
       - MINIO_DOMAIN=minio_test
 
     command: server /data --console-address ":9090"
@@ -87,14 +87,14 @@ Each worker process can handle up to 1024 simultaneous connections. Total max co
 ```
 server {
     listen 80;
-    server_name 192.168.181.54;
+    server_name 192.168.181.xx;
     location / {
         return 301 https://$host$request_uri;
     }
 }
 ```
 
-Any plain HTTP request to `192.168.181.54` gets permanently redirected (301) to the HTTPS version of the same URL. This ensures all traffic is encrypted.
+Any plain HTTP request to `192.168.181.XX` gets permanently redirected (301) to the HTTPS version of the same URL. This ensures all traffic is encrypted.
 
 ---
 
@@ -102,8 +102,8 @@ Any plain HTTP request to `192.168.181.54` gets permanently redirected (301) to 
 
 ```
 upstream minio_s3 {
-    server 192.168.181.54:9000 max_fails=2 fail_timeout=20s;
-    server 192.168.181.138:9000 max_fails=2 fail_timeout=20s;
+    server 192.168.181.xx:9000 max_fails=2 fail_timeout=20s;
+    server 192.168.181.xxx:9000 max_fails=2 fail_timeout=20s;
 }
 ```
 
@@ -113,7 +113,7 @@ This defines a pool of two MinIO servers for load balancing. Nginx round-robins 
 
 `fail_timeout=20s` — serves two purposes: (1) the window during which `max_fails` is counted, and (2) how long the server stays marked down before Nginx tries it again.
 
-So if `.54:9000` fails twice in 20 seconds, Nginx stops sending it traffic for 20 seconds, then retries. This gives you basic high availability across two MinIO nodes.
+So if `.xx:9000` fails twice in 20 seconds, Nginx stops sending it traffic for 20 seconds, then retries. This gives you basic high availability across two MinIO nodes.
 
 ---
 
@@ -123,7 +123,7 @@ So if `.54:9000` fails twice in 20 seconds, Nginx stops sending it traffic for 2
 
 `listen 443 ssl;` and `listen [::]:443 ssl;` — listens on port 443 for both IPv4 and IPv6, with SSL/TLS enabled.
 
-`server_name 192.168.181.54;` — this server block responds to requests addressed to this IP.
+`server_name 192.168.181.xx;` — this server block responds to requests addressed to this IP.
 
 `root /usr/share/nginx/html;` — fallback document root for static files (used by the error pages).
 
@@ -311,7 +311,7 @@ http {
     server {
         listen       443 ssl;
         listen       [::]:443 ssl;
-        server_name  192.168.181.65;
+        server_name  192.168.181.xx;
         root         /usr/share/nginx/html;
 
         ssl_certificate "/certificate/fullchain.pem";
