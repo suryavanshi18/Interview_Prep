@@ -1,0 +1,362 @@
+
+###################### Minio #####################################
+
+version: '3.8'
+
+services:
+  minio:
+    image: quay.io/minio/minio:RELEASE.2024-01-29T03-56-32Z
+    container_name: minio
+    volumes:
+      - /minio/data:/data
+      - /minio-setup/setup-minio/scripts:/root/scripts
+      - /minio-setup/certificates:/root/.minio/certs
+    ports:
+      - "9000:9000"
+      - "9090:9090"
+    environment:
+      - MINIO_ROOT_USER=cdac
+      - MINIO_ROOT_PASSWORD=linux123
+      - MINIO_BROWSER_REDIRECT_URL=https://192.168.181.54:9090
+      #- MINIO_BROWSER_REDIRECT_URL=https://192.168.181.138:9090
+      - MINIO_DOMAIN=minio_test
+
+    command: server /data --console-address ":9090"
+    restart: always
+##########################################################################
+
+
+Here's a full breakdown of your config, section by section:
+
+---
+
+**Global context (top level)**
+
+`user nginx;` — the Nginx worker processes run as the `nginx` system user. This is a security practice so Nginx doesn't run as root after startup.
+
+`worker_processes auto;` — Nginx spawns one worker process per CPU core. `auto` detects the core count. Each worker handles connections independently.
+
+`error_log /var/log/nginx/error.log debug;` — error logs go to this file at `debug` level, which is the most verbose. This is great for troubleshooting but generates a lot of output — you'd normally change this to `warn` or `error` in production.
+
+`pid /run/nginx.pid;` — stores the master process ID in this file, used by systemd and management scripts.
+
+`include /usr/share/nginx/modules/*.conf;` — loads any dynamic modules (like `ngx_http_geoip_module`, etc.) installed on the system.
+
+---
+
+**Events block**
+
+```
+events {
+    worker_connections 1024;
+}
+```
+
+Each worker process can handle up to 1024 simultaneous connections. Total max connections = `worker_processes × worker_connections`. With a 4-core machine, that's ~4096 concurrent connections.
+
+---
+
+**HTTP block — general settings**
+
+`log_format main '...'` — defines a log format called `main` that captures client IP, timestamp, request line, status code, bytes sent, referrer, user agent, and the `X-Forwarded-For` header (useful when you're behind another proxy).
+
+`access_log /var/log/nginx/access.log main;` — all HTTP requests get logged using that format.
+
+`sendfile on;` — uses the kernel's `sendfile()` syscall to serve static files more efficiently, avoiding copying data between kernel and user space.
+
+`tcp_nopush on;` — sends response headers and the beginning of the file in one TCP packet. Works with `sendfile` to reduce the number of packets.
+
+`tcp_nodelay on;` — disables Nagle's algorithm, sending small packets immediately instead of buffering. Important for real-time/API traffic.
+
+`keepalive_timeout 65;` — a client connection stays open for 65 seconds of inactivity before Nginx closes it. Reduces the overhead of re-establishing TCP connections.
+
+`types_hash_max_size 2048;` — sets the max size of the MIME types hash table. Just a performance tuning parameter.
+
+`include /etc/nginx/mime.types;` — loads the mapping of file extensions to MIME types (`.html` → `text/html`, `.jpg` → `image/jpeg`, etc.).
+
+`default_type application/octet-stream;` — if Nginx can't determine a file's MIME type, it falls back to a generic binary download type.
+
+`client_max_body_size 3G;` — **this is critical for MinIO**. Allows uploads up to 3 GB in a single request. Without this, Nginx would reject large object uploads with a `413 Request Entity Too Large` error. Set this based on the largest object you expect to upload.
+
+`include /etc/nginx/conf.d/*.conf;` — loads any additional config files from the conf.d directory.
+
+---
+
+**Server block 1 — HTTP to HTTPS redirect (port 80)**
+
+```
+server {
+    listen 80;
+    server_name 192.168.181.54;
+    location / {
+        return 301 https://$host$request_uri;
+    }
+}
+```
+
+Any plain HTTP request to `192.168.181.54` gets permanently redirected (301) to the HTTPS version of the same URL. This ensures all traffic is encrypted.
+
+---
+
+**Upstream block — MinIO backend pool**
+
+```
+upstream minio_s3 {
+    server 192.168.181.54:9000 max_fails=2 fail_timeout=20s;
+    server 192.168.181.138:9000 max_fails=2 fail_timeout=20s;
+}
+```
+
+This defines a pool of two MinIO servers for load balancing. Nginx round-robins requests between them by default.
+
+`max_fails=2` — if a backend fails to respond 2 times within the `fail_timeout` window, Nginx marks it as unavailable.
+
+`fail_timeout=20s` — serves two purposes: (1) the window during which `max_fails` is counted, and (2) how long the server stays marked down before Nginx tries it again.
+
+So if `.54:9000` fails twice in 20 seconds, Nginx stops sending it traffic for 20 seconds, then retries. This gives you basic high availability across two MinIO nodes.
+
+---
+
+**Server block 2 — HTTPS reverse proxy (port 443)**
+
+**Listener and identity:**
+
+`listen 443 ssl;` and `listen [::]:443 ssl;` — listens on port 443 for both IPv4 and IPv6, with SSL/TLS enabled.
+
+`server_name 192.168.181.54;` — this server block responds to requests addressed to this IP.
+
+`root /usr/share/nginx/html;` — fallback document root for static files (used by the error pages).
+
+---
+
+**SSL/TLS configuration:**
+
+`ssl_certificate` / `ssl_certificate_key` — your TLS certificate chain and private key. These are what make HTTPS work.
+
+`ssl_session_cache shared:SSL:1m;` — caches SSL session parameters in a 1 MB shared memory zone. Clients reconnecting within the timeout can skip the full TLS handshake (called session resumption), reducing latency.
+
+`ssl_session_timeout 10m;` — cached sessions are valid for 10 minutes.
+
+`ssl_protocols TLSv1.2 TLSv1.3;` — only allows TLS 1.2 and 1.3. Older protocols (TLS 1.0, 1.1, SSLv3) are insecure and correctly disabled here.
+
+`ssl_prefer_server_ciphers off;` — lets the client pick its preferred cipher from the allowed list. With TLS 1.3, this setting doesn't matter much since the protocol handles cipher negotiation differently.
+
+`ssl_ciphers "EECDH+AESGCM:EDH+AESGCM:AES256+EECDH:AES256+EDH";` — restricts to strong AEAD ciphers using elliptic curve and Diffie-Hellman key exchange. No weak ciphers like RC4 or 3DES.
+
+---
+
+**Proxy buffering:**
+
+```
+proxy_buffering off;
+proxy_request_buffering off;
+```
+
+`proxy_buffering off` — Nginx streams the response from MinIO directly to the client instead of buffering it in memory/disk first. Essential for large file downloads from MinIO — without this, Nginx would try to buffer multi-GB responses.
+
+`proxy_request_buffering off` — same for uploads. The client's request body streams directly to MinIO. This is why you can upload large files without Nginx needing huge temp disk space.
+
+---
+
+**Location / block — the actual proxying:**
+
+**Header forwarding:**
+
+`proxy_set_header Host $http_host;` — passes the original `Host` header to MinIO. MinIO uses this for virtual-host-style bucket access (`bucket.minio.example.com`).
+
+`proxy_set_header X-Real-IP $remote_addr;` — tells MinIO the real client IP.
+
+`proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;` — appends the client IP to the forwarding chain. Useful for audit logs.
+
+`proxy_set_header X-Forwarded-Proto $scheme;` — tells MinIO whether the original request was HTTP or HTTPS. MinIO uses this to generate correct URLs in responses.
+
+---
+
+**Proxy SSL settings (Nginx → MinIO connection):**
+
+`proxy_ssl_server_name on;` — sends SNI (Server Name Indication) when connecting to MinIO over TLS.
+
+`proxy_ssl_name minio;` — the SNI hostname to send. Must match what MinIO's cert expects.
+
+`proxy_ssl_verify off;` — Nginx does **not** verify MinIO's TLS certificate. This is common in internal/private networks but means Nginx won't reject a self-signed or expired cert from MinIO. The next two lines suggest you started setting up verification but left it off.
+
+`proxy_pass https://minio_s3;` — forwards all requests to the `minio_s3` upstream pool over HTTPS.
+
+---
+
+**Security headers:**
+
+`Strict-Transport-Security` (HSTS) — tells browsers to only use HTTPS for this domain for one year, including subdomains. `preload` allows submission to browser HSTS preload lists.
+
+`X-Content-Type-Options "nosniff"` — prevents browsers from guessing MIME types, mitigating certain XSS attacks.
+
+`Content-Security-Policy` — restricts what resources the browser can load. `default-src 'self' 'unsafe-inline'` allows content from the same origin and inline scripts/styles. `img-src 'self' data:` allows images from same origin and data URIs. This mainly affects the MinIO console UI, not S3 API calls.
+
+---
+
+**Cache control:**
+
+```
+add_header Cache-Control "no-store, no-cache, must-revalidate..."
+add_header Pragma "no-cache"
+expires -1;
+proxy_hide_header X-Accel-Expires;
+proxy_hide_header Expires;
+proxy_hide_header Cache-Control;
+```
+
+This aggressively disables caching — both in browsers and intermediate proxies. `proxy_hide_header` strips any caching headers MinIO sends, then Nginx replaces them with no-cache directives. This ensures clients always get fresh data, but it also means browsers will never cache static assets from the MinIO console, which can make the UI slower.
+
+---
+
+**Cookie handling:**
+
+`proxy_cookie_path / "/; Secure; HttpOnly; SameSite=Strict";` — rewrites cookie paths to add security flags. `Secure` = only sent over HTTPS. `HttpOnly` = JavaScript can't access the cookie. `SameSite=Strict` = cookie only sent in same-site requests (prevents CSRF).
+
+The `Set-Cookie` line deleting `cookie_name` looks like a blanket attempt to clear cookies, but it's a bit odd — it would add this delete header to every response regardless.
+
+---
+
+**Connection tuning:**
+
+`proxy_connect_timeout 200;` — waits up to 200 seconds to establish a connection to MinIO. This is quite generous.
+
+`proxy_http_version 1.1;` — uses HTTP/1.1 to MinIO, which supports keepalive connections.
+
+`proxy_set_header Connection "";` — clears the `Connection` header so keepalive works with the upstream. Without this, each request might open a new connection to MinIO.
+
+`chunked_transfer_encoding off;` — disables chunked encoding. MinIO's S3 API uses `Content-Length` based transfers in most cases, and some S3 clients don't handle chunked responses well.
+
+---
+
+**Method restriction:**
+
+```
+limit_except GET HEAD POST PUT DELETE PATCH {
+    deny all;
+}
+```
+
+Only allows these HTTP methods. Any other method (like `TRACE`, `OPTIONS`, `CONNECT`) gets denied. This is a security hardening measure, though note that blocking `OPTIONS` could break CORS preflight requests if you have browser-based S3 clients.
+
+---
+
+**Error pages:**
+
+Standard fallback pages for 404 and 5xx errors, served from the document root.
+
+---
+
+**A few things worth reviewing:**
+
+- `error_log debug` is very verbose — consider changing to `warn` for production
+- `proxy_ssl_verify off` means Nginx doesn't validate MinIO's cert — fine internally, but worth noting
+- The blanket `Set-Cookie` deletion on every response is unusual and might interfere with MinIO console sessions
+- Blocking `OPTIONS` could break CORS if you access MinIO from browser JavaScript
+- The aggressive no-cache headers will slow down the MinIO console UI since even static JS/CSS assets won't be cached
+
+
+# For more information on configuration, see:
+#   * Official English Documentation: http://nginx.org/en/docs/
+#   * Official Russian Documentation: http://nginx.org/ru/docs/
+
+user nginx;
+worker_processes auto;
+error_log /var/log/nginx/error.log debug;
+pid /run/nginx.pid;
+
+# Load dynamic modules. See /usr/share/doc/nginx/README.dynamic.
+include /usr/share/nginx/modules/*.conf;
+
+events {
+    worker_connections 1024;
+}
+
+http {
+    log_format  main  '$remote_addr - $remote_user [$time_local] "$request" '
+                      '$status $body_bytes_sent "$http_referer" '
+                      '"$http_user_agent" "$http_x_forwarded_for"';
+
+    access_log  /var/log/nginx/access.log  main;
+
+    sendfile            on;
+    tcp_nopush          on;
+    tcp_nodelay         on;
+    keepalive_timeout   65;
+    types_hash_max_size 2048;
+
+    include             /etc/nginx/mime.types;
+    default_type        application/octet-stream;
+    # Adjust client body size limit as needed
+    client_max_body_size 3G;
+    # Load modular configuration files from the /etc/nginx/conf.d directory.
+    include /etc/nginx/conf.d/*.conf;
+
+    server {
+        listen 80;
+        server_name 192.168.181.65;
+
+        location / {
+            return 301 https://$host$request_uri;
+        }
+    }
+
+    upstream minio_s3 {
+        server 192.168.181.165:9000 max_fails=2 fail_timeout=20s;
+        server 192.168.181.166:9000 max_fails=2 fail_timeout=20s;
+        #server 192.168.181.167:9000 max_fails=2 fail_timeout=20s;
+    }
+
+
+    server {
+        listen       443 ssl;
+        listen       [::]:443 ssl;
+        server_name  192.168.181.65;
+        root         /usr/share/nginx/html;
+
+        ssl_certificate "/certificate/fullchain.pem";
+        ssl_certificate_key "/certificate/key.pem";
+        ssl_session_cache shared:SSL:1m;
+        ssl_session_timeout  10m;
+        # Recommended SSL configuration for modern compatibility
+        ssl_protocols TLSv1.2 TLSv1.3;
+        ssl_prefer_server_ciphers off;
+        
+        ignore_invalid_headers off;
+        # To disable buffering
+        proxy_buffering off;
+        proxy_request_buffering off;
+
+        # Specify a supported and secure cipher suite
+        ssl_ciphers "EECDH+AESGCM:EDH+AESGCM:AES256+EECDH:AES256+EDH";
+        location / {
+            proxy_set_header Host $http_host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+            
+            proxy_connect_timeout 200;
+            proxy_http_version 1.1;
+            proxy_set_header Connection "";
+            chunked_transfer_encoding off;
+
+            proxy_ssl_server_name on;
+            proxy_ssl_name minio;
+            proxy_ssl_verify off;
+            proxy_ssl_trusted_certificate /certificate/fullchain.pem; 
+            proxy_ssl_verify_depth 1;
+
+            proxy_pass https://minio_s3;
+        }
+        
+
+        error_page 404 /404.html;
+        location = /40x.html {
+        }
+
+        error_page 500 502 503 504 /50x.html;
+        location = /50x.html {
+        }
+    }
+}
+
