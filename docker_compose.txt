@@ -1,0 +1,50 @@
+					Docker compose
+#########################################################################################################
+
+version: '3.8'
+
+services:
+  ui_media_service:
+    image: docker_image/yyyy:05032026
+    container_name: some_container_name
+    ports:
+      - "7070:7070"
+    volumes:
+      - /opt/config.ini:/home/ng/config.ini
+      - /opt/certificate:/home/ng/certificate
+    restart: always
+
+
+					Dockerfile
+#########################################################################################################
+
+
+
+FROM python:3.9
+RUN apt update -y && apt install nano
+RUN apt-get install -y libgl1 libglib2.0-0
+
+ARG NG_WRD
+
+RUN useradd -m ng && echo "xx:${NG_WRD}" | chpasswd && adduser xx sudo
+
+USER ng
+
+WORKDIR /home/xx
+
+# Copy the requirements file and install dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy the application files
+COPY --chown=ng:sudo . /home/xx
+
+# Expose the necessary port
+EXPOSE 7073
+
+# Set the default command to start the application
+CMD ["bash", "start.sh"]
+
+
+#########################################################################################################
+
