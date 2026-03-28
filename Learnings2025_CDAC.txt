@@ -1,0 +1,96 @@
+Past Modules
+
+Media Download
+	UI Media Service
+	Client Media Service
+	Cloud Media Service
+	Media Download Migrator
+	Minio upload service
+	FRS service
+
+	Activities performed
+ 		1.Error resolution in media migrator service
+ 		2.Changing minio certificate during DR activity
+ 		3.Checking minio replication status
+ 		4.FRS service error resolution in Image enrollment module 
+ 	
+ 
+
+Profile Creation
+	Activities performed
+		1.Making poi_name and profile name same while displaying profile data
+		2.Profile deletion service ->functionality is developed not deployed yet
+		
+
+Profile Enrichment
+	1.Calling article extraction service for the profile
+	2.Running RE on those article
+	3.Calling Profile builder service
+	4.Ingesting profile builder response in elastic
+	5.Updating details in profile creation and enrichment table
+	
+
+Folder text analytics
+	1.error resolution
+
+Video Analytics
+	1.Store video in minio and video meta data on postgresql table
+	2.Extract audio from video
+	3.Show user media details on UI
+	4.Provide video hash name to UI so that speech analytics and video analytics start there processes
+	
+
+
+Current Modules
+
+Image Analytics
+	1.Take single image from user and store in minio and its meta data in postgresql table
+	2.Take multiple images from user and show only those set of of images when clicked on the view button
+	3.Using FRS service to give bounding box info to FRS ODS service
+	4.Show user media details on UI
+	5.Provide image hash name to UI for displaying images.
+
+Profile Merger
+	1.Develope endpoint for profile merger
+	2.Pass required Profile data to profile builder service excluding list of articles and notes
+	3.Store profile builder response and performer merger
+	4.Hide the 2 profiles on which merger happens and show the new profile
+	5.Ensure merged profile is created successfully and enrichment process starts
+
+Engagement Analytics
+	1. Develope endpoint to show viral posts based on filter criteria on twitter data
+	2. Map keywords to the selected theme and subtheme selected by the user
+	3. Develope similar functionality for other sources
+	4. Finding additional demographic information about various sources in the post section
+
+Skills Learnt
+
+	Docker
+		1.Building docker image of the service/pipeline
+		2.Making container from image
+		3.Checking logs from the build
+		4.Writing Dockerfile for building image
+		5.Writing Docker compose file for launching multiple services
+	
+	Elastic
+		1.CRUD operations on the index
+		2.Creating backup of index and understating about shards,mappings
+		3.Query operations including match,match_all,filter,search
+		4.Python queries from fastapi app on elastic
+	
+	Fastapi
+		1.Implenting CRUD operations on fastapi endpoints
+		2.Building modules using Pydantic,SqlAlchemy packages
+		3.Inducing logging mechanism
+		4.DBs used PostgreSQL and MariaDB
+	Git
+		1.Merging and Pulling code from Git
+		2.Git commands from terminal
+	Streamlit
+		1.Building streamlit app
+		2.Learning about filter functionality and creating various pages
+		3.Ploting graphs
+		4.ufw command for ensuring app is accessible on other systems
+
+
+
