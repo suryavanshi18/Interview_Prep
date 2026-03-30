@@ -48,3 +48,215 @@ CMD ["bash", "start.sh"]
 
 #########################################################################################################
 
+docker pull redis:alpine
+docker run -d --name redis -p 6379:6379 redis:alpine
+
+That's because `docker-entrypoint.sh` is **inside the container**, not on your host machine!
+
+---
+
+## Where It Actually Lives
+
+```
+Your Linux Server (Host)          Redis Container
+/usr/bin/                         /usr/local/bin/
+  ├── docker          ✅           ├── docker-entrypoint.sh  ✅
+  ├── dockerd                      └── redis-server
+  ├── docker-proxy
+  └── ...
+```
+
+---
+
+
+## What You Found in `/usr/bin` Are Docker's Own Binaries
+
+| File | What it is |
+|---|---|
+| `docker` | Docker CLI — the command you type |
+| `dockerd` | Docker daemon — runs in background |
+| `dockerd-rootless.sh` | Runs Docker without root privileges |
+| `docker-proxy` | Handles port mapping between containers and host |
+
+These are **Docker itself**, not anything related to the containers running inside it. Think of them as the engine, not the passengers.
+
+
+###################################################################################################################
+
+
+#!/bin/sh
+#
+# If command starts with an option, prepend minio.
+if [ "${1}" != "minio" ]; then
+	if [ -n "${1}" ]; then
+		set -- minio "$@"
+	fi
+fi
+docker_switch_user() {
+	if [ -n "${MINIO_USERNAME}" ] && [ -n "${MINIO_GROUPNAME}" ]; then
+		if [ -n "${MINIO_UID}" ] && [ -n "${MINIO_GID}" ]; then
+			chroot --userspec=${MINIO_UID}:${MINIO_GID} / "$@"
+		else
+			echo "${MINIO_USERNAME}:x:1000:1000:${MINIO_USERNAME}:/:/sbin/nologin" >>/etc/passwd
+			echo "${MINIO_GROUPNAME}:x:1000" >>/etc/group
+			chroot --userspec=${MINIO_USERNAME}:${MINIO_GROUPNAME} / "$@"
+		fi
+	else
+		exec "$@"
+	fi
+}
+## DEPRECATED and unsupported - switch to user if applicable.
+docker_switch_user "$@"
+
+###################################################################################################################
+
+
+
+---
+
+## Script Breakdown
+
+### Part 1 — Ensure Command Starts with `minio`
+```sh
+if [ "${1}" != "minio" ]; then
+    if [ -n "${1}" ]; then
+        set -- minio "$@"   # prepends "minio" to the command
+    fi
+fi
+```
+Makes sure the container always runs the `minio` command, even if you forget to type it.
+
+---
+
+### Part 2 — User Switching Function
+```sh
+docker_switch_user() {
+    if [ -n "${MINIO_USERNAME}" ] && [ -n "${MINIO_GROUPNAME}" ]; then
+        # If custom UID/GID provided → use those
+        if [ -n "${MINIO_UID}" ] && [ -n "${MINIO_GID}" ]; then
+            chroot --userspec=${MINIO_UID}:${MINIO_GID} / "$@"
+
+        # Otherwise → create user/group dynamically and use those
+        else
+            echo "${MINIO_USERNAME}:x:1000:1000:..." >>/etc/passwd
+            echo "${MINIO_GROUPNAME}:x:1000" >>/etc/group
+            chroot --userspec=${MINIO_USERNAME}:${MINIO_GROUPNAME} / "$@"
+        fi
+    else
+        exec "$@"   # No custom user → just run as default
+    fi
+}
+```
+
+---
+
+## Full Flow
+```
+Container Starts
+      │
+      ▼
+Is command "minio"? → If not, prepend it
+      │
+      ▼
+MINIO_USERNAME & MINIO_GROUPNAME set?
+      │
+      ├── Yes + UID/GID → run as that specific UID/GID
+      ├── Yes, no UID/GID → create user dynamically, run as them
+      └── No → just run minio normally
+      │
+      ▼
+MinIO Server Starts
+```
+
+---
+
+## Why User Switching Matters
+It's a **security practice** — avoids running MinIO as `root` inside the container:
+
+| Scenario | Risk |
+|---|---|
+| Running as `root` | If container is compromised, attacker has root |
+| Running as custom user | Limited permissions, much safer |
+
+---
+
+## The Deprecation Warning
+```sh
+## DEPRECATED and unsupported - switch to user if applicable.
+docker_switch_user "$@"
+```
+MinIO is flagging this user-switching approach as **deprecated** — newer versions handle this differently. Worth keeping an eye on if you upgrade MinIO.
+
+
+
+
+# Get the log file path for a specific container
+docker inspect <container_id> --format='{{.LogPath}}'
+
+# Example output
+/var/lib/docker/containers/36790017413d.../36790017413d...-json.log
+
+Clear Logs Without Stopping Container
+bash# Truncate the log file (safest way)
+truncate -s 0 $(docker inspect <container_id> --format='{{.LogPath}}')
+
+
+Files Inside Docker Container Directory
+Each container gets its own folder in /var/lib/docker/containers/<container_id>/. 
+
+Here's what each file does:
+
+<container_id>/
+    │
+    ├── *-json.log          → container logs (can grow large)
+    ├── config.v2.json      → container config (env vars, image, entrypoint)
+    ├── hostconfig.json     → port mappings, volume mounts
+    ├── hostname            → container hostname
+    ├── hosts               → container /etc/hosts
+    ├── resolv.conf         → container DNS settings
+    ├── resolv.conf.hash    → DNS change detection
+    ├── checkpoints/        → saved container states
+    └── mounts/             → volume mount info
+
+
+
+################################################################################################################
+
+cd minio/data/videodatasource
+xargs rm -r <del.txt 
+
+#del.txt file has list of media files that you need to delete
+
+
+
+
+Delete Files Older Than 1 Month in /tmp
+find /tmp -type f -mtime +30 -exec ls -lh {} \;
+# Delete files older than 30 days
+sudo find /tmp -type f -mtime +30 -delete
+
+# Open crontab
+crontab -e
+
+# Add this line — runs every day at midnight
+0 0 * * * find /tmp -type f -mtime +30 -delete
+
+
+crontab -l
+#list
+
+crontab -r
+delete
+
+
+minute hour day_of_month month day_of_week	
+
+
+
+
+
+################################################################################################################
+
+
+
+
