@@ -54,5 +54,13 @@ Calling triton->network delay
 Reading from db-> IO wait
 
 
+| Concept             | Meaning                 |
+| ------------------- | ----------------------- |
+| `async`             | function can pause      |
+| `await`             | pause here, don’t block |
+| `httpx.AsyncClient` | async HTTP requests     |
+
+
+
 await tells python to pause async until async task finishes but dont block everything else
 
