@@ -104,6 +104,39 @@ Note about stringstream
 	But here we pass a delimiter ('.').
 	That means it will read until it finds a dot (.)
 
+############################################################################
+
+Given a tree with each node having a weight. Find min weight required to disconnect all leaf nodes.
+
+eg: Weight: A-B: 2 A-C: 4 B-D: 2 B-E: 1
+(A has 2 child nodes: B and C. B has 2 child nodes: D and E)
+
+Ans: 6 (Cut node C and Node B)
+
+eg: Weight: A-B: 3 A-C: 4 B-D: 1 B-E: 1
+(A has 2 child nodes: B and C. B has 2 child nodes: D and E)
+
+Ans: 6 (Cut node C, Node D and Node E)
+
+
+dfs(int node,int parent)
+bool isLeaf=true;
+int totalCost=0;
+
+for(auto& [child,weight]:adj[node])
+if child==parent
+continue
+isLeaf=false;
+
+int disconnextCost=dfs(child,node)
+totalCost+=min(weight,disconnextCost)
+
+if(isLeaf)
+return INT_MAX
+return totalCost;
+
+###################################################
+
 
 
 
