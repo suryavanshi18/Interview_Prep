@@ -1,0 +1,80 @@
+```bash
+#!/bin/bash
+
+exec 200>/var/run/disk_cleanup.lock
+flock -n 200 || { echo "$(date): Already running, skipping"; exit 1; }
+
+THRESHOLD=80
+USAGE=$(df / | awk 'NR==2 {gsub("%",""); print $5}')
+
+echo "$(date): Disk usage is ${USAGE}%"
+
+if [ "$USAGE" -gt "$THRESHOLD" ]; then
+echo "$(date): Threshold exceeded, starting cleanup"
+
+# Only delete files older than 1 hour in /tmp (safer)
+find /tmp -mindepth 1 -mmin +60 -delete
+
+find /root/minio/data/videodatasource/ -type f -mtime +7 -delete
+find /root/minio/data/audiodatasource/ -type f -mtime +7 -delete
+find /root/minio/data/imagedatasource/ -type f -mtime +7 -delete
+
+echo "$(date): Cleanup completed"
+else
+echo "$(date): No cleanup needed"
+fi
+```
+
+**Setup commands (run once):**
+
+```bash
+# Copy script to destination
+sudo cp disk_cleanup.sh /usr/local/bin/disk_cleanup.sh
+
+# Make it executable — this is required, easy to miss
+sudo chmod +x /usr/local/bin/disk_cleanup.sh
+
+# Create the log file so redirection works cleanly
+sudo touch /var/log/disk_cleanup.log
+
+# Open root's crontab
+sudo crontab -e
+```
+
+**Crontab entry** (unchanged, it's correct):
+```
+0 * * * * /usr/local/bin/disk_cleanup.sh >> /var/log/disk_cleanup.log 2>&1
+```
+
+**To verify it's working after saving:**
+
+```bash
+# Check the crontab was saved
+sudo crontab -l
+
+# Manually test the script before waiting for cron
+sudo /usr/local/bin/disk_cleanup.sh
+
+# Watch the log
+tail -f /var/log/disk_cleanup.log
+```
+
+The main practical fix is the `/tmp` cleanup — deleting everything in `/tmp` indiscriminately can break running programs (web servers, package managers, etc.). The `-mmin +60` filter makes it safe.
+
+ 
+
+########################################
+
+ 
+
+Problem ->random.randint() is not cryptographically secure and can be predicted, which is dangerous for security-sensitive IDs like tokens, session IDs, or anything authentication-related.
+You should use Python’s secrets module or os.urandom for CSPRNG.
+
+uid=random.randint(1,10000)
+
+ 
+
+use
+
+uid_bytes = secrets.token_bytes(16)
+uid = int.from_bytes(uid_bytes, byteorder="big")
