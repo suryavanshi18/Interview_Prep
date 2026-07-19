@@ -138,8 +138,14 @@ return totalCost;
 ###################################################
 
 
+Zomato ML Engineering
 
-
+1. Implement Stochastic Gradient Descent (SGD) from scratch in Python.
+2. If decision trees are not differentiable, how does GBDT optimize its objective function?
+3. In-depth discussion on my ML projects, including design decisions, trade-offs, and production challenges.
+4. How would you design an ML system to minimize False Positives (FP)?
+5. In-depth Machine Learning concepts &
+Core Deep Learning concepts.
 
 
 
