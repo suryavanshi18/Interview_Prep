@@ -419,5 +419,61 @@ Analysis: This is very common in Senior Screens. If you get stuck on the state m
 
 System Design:
 Real-Time Device Power Consumption Monitoring and Control  
+
+
 Problem Requirements: Design a platform to monitor power consumption data from multiple devices in real time, and adjust the devices' operating status or management methods based on usage conditions.  
 Analysis: The core is to clearly explain it in three layers: the collection and transmission layer where devices continuously report data, the real-time judgment layer in the backend for ingestion and evaluation, and the execution layer for safely issuing control instructions after power consumption changes—especially covering how to handle boundary cases like jitter, false triggers, and device offline. The interviewer wants to see if you can clearly articulate the feedback loop from "observing" to "automatically adjusting device status."
+
+## Projects
+1.) Self-Hosted Inference Cluster
+Build: Multi-node GPU cluster serving an open model with vLLM or SGLang, health checks, and a public latency report.
+Why: Talk is cheap. A live cluster is the portfolio.
+
+2.) Cost-Per-Token Dashboard
+Build: TTFT, ITL, GPU util (DCGM) and $ per 1M tokens by model, tenant and route.
+Why: Infra without FinOps is just expensive uptime.
+
+3.) Queue-Based GPU Autoscaler
+Build: KEDA (or equivalent) scaling on queue depth, with cold-start mitigation and spot fallback.
+Why: Idle GPUs kill startups. Slow scale kills users.
+
+4.) Continuous Batching Load Test
+Build: Traffic generator that stresses continuous batching, KV cache limits and saturation points.
+Why: You don’t know your serving stack until it breaks under load.
+
+5.) Model Weight Delivery System
+Build: Safetensors registry + sharded weights + CDN/lazy loading for fast node bring-up.
+Why: Cold starts are often a storage problem pretending to be a compute problem.
+
+6.) Multi-Model AI Gateway
+Build: Routing, retries, fallbacks, rate limits and per-tenant token budgets across 2–3 serving backends.
+Why: Production isn’t one endpoint. It’s a traffic policy.
+
+7.) Quantized Serving Bakeoff
+Build: Same model in FP16 vs AWQ/FP8; publish quality vs latency vs VRAM tradeoffs.
+Why: Optimization without benchmarks is cosplay.
+
+8.) Secure Multi-Tenant Inference Layer
+Build: Tenant isolation, keyed access, sandboxed tool/exec paths, audit logs.
+Why: One noisy neighbor (or leak) ends the B2B deal.
+
+9.) Checkpointed Distributed Training Job
+Build: Ray or Spój/Slurm job with FSDP/tensor parallel, fault injection, and resume-from-checkpoint.
+Why: Training infra is judged on recovery not the happy path.
+
+10.) Speculative Decoding Prototype
+Build: Draft + target model path with prefix caching / chunked prefill; measure accepted-token rate.
+Why: Speed wins are product features when you own the stack.
+
+11.) GPU Partitioning Lab
+Build: MIG (or equivalent) slices with fair scheduling, resource limits, and contention tests.
+Why: Real clusters share silicon. You must prove fairness under pressure.
+
+12.) Triton / Custom Kernel Path
+Build: One hot path accelerated (attention, sampling or tokenizer-adjacent) with before/after metrics.
+Why: Senior infra energy = knowing when frameworks aren’t enough.
+
+13.) Observability Spine for Non-Determinism
+Build: Traces for queue time, prefill, decode, cache hits, errors alerts on drift and cost spikes.
+Why: You can’t page what you can’t see.
+
