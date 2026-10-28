@@ -1,0 +1,52 @@
+services:
+  kafka:
+    image: apache/kafka:4.4.0
+    container_name: kafka
+    hostname: kafka-${NODE_ID}
+    network_mode: host
+    restart: unless-stopped
+
+    environment:
+      KAFKA_NODE_ID: "${NODE_ID}"
+      KAFKA_PROCESS_ROLES: "broker,controller"
+      CLUSTER_ID: "${CLUSTER_ID}"
+
+      KAFKA_CONTROLLER_QUORUM_VOTERS: "1@${VM1_IP}:9093,2@${VM2_IP}:9093,3@${VM3_IP}:9093"
+      KAFKA_CONTROLLER_LISTENER_NAMES: "CONTROLLER"
+
+      KAFKA_LISTENERS: "BROKER://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093"
+      KAFKA_ADVERTISED_LISTENERS: "BROKER://${NODE_IP}:9092"
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: "BROKER:PLAINTEXT,CONTROLLER:PLAINTEXT"
+      KAFKA_INTER_BROKER_LISTENER_NAME: "BROKER"
+
+      KAFKA_DEFAULT_REPLICATION_FACTOR: "3"
+      KAFKA_MIN_INSYNC_REPLICAS: "2"
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: "3"
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: "3"
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: "2"
+      KAFKA_SHARE_COORDINATOR_STATE_TOPIC_REPLICATION_FACTOR: "3"
+      KAFKA_SHARE_COORDINATOR_STATE_TOPIC_MIN_ISR: "2"
+
+      KAFKA_NUM_PARTITIONS: "3"
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+      KAFKA_UNCLEAN_LEADER_ELECTION_ENABLE: "false"
+
+      KAFKA_LOG_DIRS: "/tmp/kraft-combined-logs"
+      KAFKA_LOG_RETENTION_HOURS: "168"
+
+    volumes:
+      - kafka_data:/tmp/kraft-combined-logs
+
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server ${NODE_IP}:9092 >/dev/null 2>&1 || exit 1"
+        ]
+      interval: 15s
+      timeout: 10s
+      retries: 20
+      start_period: 30s
+
+volumes:
+  kafka_data:
